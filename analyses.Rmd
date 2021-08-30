@@ -1,0 +1,107 @@
+---
+title: "Analyses"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(xlsx)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(phonR)
+```
+
+## Replication
+
+In this section, I'm just doing again the analyses that are already in the manuscript. I think those were done with SPSS, so this is more replication than reproduction...
+
+```{r readin}
+read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
+dat[is.na(dat$Word),] #NA lines are totally empty -- remove
+dat[!is.na(dat$Word),]->dat
+#dim(dat) #614 obs
+
+dat$Mom=tolower(gsub(" ","",dat$Mom)) #clean up
+#split out info from Mom column
+dat$motID=gsub("_.*","",dat$Mom)
+dat$motID=gsub(".ds.*","",dat$motID)
+#table(dat$motID)
+
+#split out DS info
+dat$ds=NA
+dat$ds[grep("pd",dat$Mom)]<-"pds"
+dat$ds[grep("ads",dat$Mom)]<-"ads"
+dat$ds[grep("_ad_",dat$Mom)]<-"ads"
+dat$ds[grep("id",dat$Mom)]<-"ids"
+#table(dat$ds)
+# sum(table(dat$ds))
+
+#split out vowel info
+dat$v=NA
+dat$v[grep("bead",dat$Mom)]<-"i"
+dat$v[grep("boot",dat$Mom)]<-"u"
+dat$v[grep("ball",dat$Mom)]<-"a"
+dat$v[grep("box",dat$Mom)]<-"a"
+#table(dat$v)
+# sum(table(dat$v))
+
+
+```
+
+Get average point vowels and draw figure 2
+
+```{r avgp}
+
+dat %>%
+    group_by(motID,ds,v) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> means
+
+means %>%
+    group_by(ds,v) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> overall_means
+
+
+p <- ggplot(overall_means, aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
+  geom_polygon(data = overall_means ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), alpha = 0.3) +
+  geom_point()
+
+```
+
+Values for ball IDS/PDS look slightly different.
+
+Next we calculate vowel space for each mom and register.
+```{r calc-space}
+
+#formula from footnote
+# (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
+ with(means, vowelMeansPolygonArea(f1, f2, vowel=v, poly.order=c("i","a","u"), group="motID"))
+
+areapl(overall_means$f1,overall_means$f2)
+
+#formula from footnote
+# (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
+vs=NULL
+for(thismom in levels(dat$motID))for(thisds in levels(dat$ds)){
+  mydat=subset(means,dat$motID==thismom & dat$ds==thids)
+  vs=rbind(vs,
+           cbind(
+      (mydat$f1[mydat$v=="i" & mydat$motID==thismom]*(mydat$f2[mydat$v=="u" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
+        mydat$f1[mydat$v=="u" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
+        mydat$f1[mydat$v=="a" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="u" & mydat$motID==thismom])
+      )/2,
+          thismom,thisds )
+        )
+}
+
+```
+
+## Variability analyses
+
