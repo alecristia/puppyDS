@@ -82,15 +82,15 @@ Next we calculate vowel space for each mom and register.
 
 #formula from footnote
 # (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
- with(means, vowelMeansPolygonArea(f1, f2, vowel=v, poly.order=c("i","a","u"), group="motID"))
-
-areapl(overall_means$f1,overall_means$f2)
+#  with(means, vowelMeansPolygonArea(f1, f2, vowel=v, poly.order=c("i","a","u"), group="motID"))
+# 
+# areapl(overall_means$f1,overall_means$f2)
 
 #formula from footnote
 # (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
 vs=NULL
-for(thismom in levels(dat$motID))for(thisds in levels(dat$ds)){
-  mydat=subset(means,dat$motID==thismom & dat$ds==thids)
+for(thismom in levels(factor(dat$motID))) for(thisds in levels(factor(dat$ds))){
+  mydat=subset(means,means$motID==thismom & means$ds==thisds)
   vs=rbind(vs,
            cbind(
       (mydat$f1[mydat$v=="i" & mydat$motID==thismom]*(mydat$f2[mydat$v=="u" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
@@ -101,7 +101,104 @@ for(thismom in levels(dat$motID))for(thisds in levels(dat$ds)){
         )
 }
 
+colnames(vs)<-c("vss","mom","ds")
+write.csv(vs,"vs.csv",row.names=F)
+
+read.csv("vs.csv")->vs
+
+
+```
+
+A within-subject analysis of variance (ANOVA) on average vowel space across
+listener conditions (3=IDS, PDS, ADS) revealed a significant main effect (F(2,18) = 6.04,
+p &lt; .02), with paired contrasts indicating that the average vowel spaces for IDS and
+PDS were not significantly different, t(9) = .98, p &gt; .05, but were both greater than the
+vowel space of ADS (IDS v. ADS, t(9) = 3.79, p &lt; .005) and (PDS v. ADS, t(9) = 2.24, p
+= .05; see Figure 1a and b).
+
+ANOVA: not the same F or dfs
+```{r}
+
+summary(aov(vss~ds + (1/mom),data=vs))
+
+```
+
+mixed model versions yield very similar results
+
+```{r}
+library(lme4)
+library(lmerTest)
+mymod=lmer(vss~ds + (1|mom),data=vs)
+summary(mymod)
+library(car)
+Anova(mymod,type="III")
+
+```
+
+Paired contrasts -- same pattern of results but different t values.
+
+```{r}
+t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ids"],paired=T)
+t.test(vs$vss[vs$ds=="ids"],vs$vss[vs$ds=="ads"],paired=T)
+t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ads"],paired=T)
+
+```
+
+Duration and pitch can be done at the item level
+
+```{r}
+mymod=lmer(Vowel.Duration~ds + (1|motID),data=dat)
+summary(mymod)
+
+dat$Pitch=as.numeric(as.character(dat$Pitch))
+mymod=lmer(Pitch~ds + (1|motID),data=dat)
+summary(mymod)
+
 ```
 
 ## Variability analyses
+Get standard deviation of f1 and f2, separating by mom and register.
 
+```{r}
+dat %>%
+    group_by(motID,ds,v) %>%
+    dplyr::summarize(f1.sd = sd(f1, na.rm=TRUE),
+                     f2.sd = sd(f2, na.rm=TRUE)) -> sds
+
+```
+
+The following mixed model shows register effects on standard deviation of F1: highest for PDS, intermediate for IDS, lowest for ADS.
+
+```{r}
+summary(lmer(f1.sd~ds+v + (1|motID),data=sds))
+
+```
+
+No such effect for SD of F2.
+```{r}
+summary(lmer(f2.sd~ds+v + (1|motID),data=sds))
+
+```
+
+Note there are some likely outliers (3 F2 a outliers):
+
+```{r}
+ggplot(dat, aes(x=f1, y=f2, color=ds)) +
+  geom_text(label=dat$v)
+```
+
+We cannot really see variability easily in any of these graphs...
+
+```{r}
+ggplot(dat, aes(x=f1, y=f2, color=ds)) +
+  geom_text(label=dat$v)+ 
+  facet_wrap(~ motID) 
+```
+
+```{r}
+dat$vds=paste(dat$v,dat$ds)
+ggplot(dat, aes(x=f1, y=f2, color=ds, linetype=vds)) +
+ # geom_text(label=dat$v)+ 
+  facet_wrap(~ motID) +  
+  stat_ellipse()
+```
