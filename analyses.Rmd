@@ -17,7 +17,8 @@ library(phonR)
 In this section, I'm just doing again the analyses that are already in the manuscript. I think those were done with SPSS, so this is more replication than reproduction...
 
 ```{r readin}
-read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
+#read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
+read.csv("Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
 dat[is.na(dat$Word),] #NA lines are totally empty -- remove
 dat[!is.na(dat$Word),]->dat
 #dim(dat) #614 obs
@@ -53,10 +54,20 @@ Get average point vowels and draw figure 2
 
 ```{r avgp}
 
+#SPSS
+#GLM- repeated measures, call the factor "listener", then select the cols, SS type III
+#figure out dg -- which should it be?
+#am I really running an ANOVA, the way she is?
+
+excel_avg=dat[!is.na(dat$F1.mean),c("F1.mean",)]
+
+
 dat %>%
     group_by(motID,ds,v) %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> means
+
+merge(excel_avg,means$f1)
 
 means %>%
     group_by(ds,v) %>%
