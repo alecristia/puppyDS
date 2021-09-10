@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(xlsx)
+#library(xlsx)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -14,7 +14,7 @@ library(phonR)
 
 ## Replication
 
-In this section, I'm just doing again the analyses that are already in the manuscript. I think those were done with SPSS, so this is more replication than reproduction...
+In this section, I'm just doing again the analyses that are already in the [manuscript](https://docs.google.com/document/d/1iQkz4HziQi6ECLrSMRTXtzBQyt29a5Ep/edit). Those were done with SPSS, so this is more replication than reproduction.
 
 ```{r readin}
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
@@ -22,6 +22,11 @@ read.csv("Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
 dat[is.na(dat$Word),] #NA lines are totally empty -- remove
 dat[!is.na(dat$Word),]->dat
 #dim(dat) #614 obs
+
+#excluded data
+dat[!(dat$Mom %in% c( " Mom2ADSbox5beadv.wav "," Mom2ADSbox5bootv.wav " )),]->dat
+#dim(dat) #612 obs
+
 
 dat$Mom=tolower(gsub(" ","",dat$Mom)) #clean up
 #split out info from Mom column
@@ -44,49 +49,98 @@ dat$v[grep("bead",dat$Mom)]<-"i"
 dat$v[grep("boot",dat$Mom)]<-"u"
 dat$v[grep("ball",dat$Mom)]<-"a"
 dat$v[grep("box",dat$Mom)]<-"a"
+dat$stim_group<-"box"
+dat$stim_group[dat$motID %in% c("mom7","mom8","mom9","mom10")]<-"ball"
+
+
 #table(dat$v)
 # sum(table(dat$v))
 
-
-```
-
-Get average point vowels and draw figure 2
-
-```{r avgp}
-
-#SPSS
-#GLM- repeated measures, call the factor "listener", then select the cols, SS type III
-#figure out dg -- which should it be?
-#am I really running an ANOVA, the way she is?
-
-excel_avg=dat[!is.na(dat$F1.mean),c("F1.mean",)]
-
-
 dat %>%
-    group_by(motID,ds,v) %>%
+    group_by(motID,ds,v,stim_group) %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> means
 
-merge(excel_avg,means$f1)
 
 means %>%
-    group_by(ds,v) %>%
+    group_by(ds,v,stim_group) %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> overall_means
 
 
-p <- ggplot(overall_means, aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
-  geom_polygon(data = overall_means ,
+```
+
+Checking that we are getting the same means -- we are.
+
+```{r}
+excel_avg=dat[!is.na(dat$F1.mean),c("Mom","F1.mean","F2.mean","motID","ds","v")]
+excel_avg$uID=paste(excel_avg$motID,excel_avg$ds,excel_avg$v)
+means$uID=paste(means$motID,means$ds,means$v)
+merge(excel_avg,means,by="uID")->test
+test[round(test$F1.mean)!=round(test$f1),c("Mom","F1.mean","f1")]
+test[round(test$F2.mean)!=round(test$f2),c("Mom","F2.mean","f2")]
+
+```
+
+Note there are some likely outliers:
+
+
+```{r}
+ggplot(dat, aes(x=f1, y=f2, color=ds)) +
+  geom_text(label=dat$v)
+```
+
+we may want to kick them out:
+
+```{r}
+
+dat[dat$Mom=="mom1idsbox5v.wav",]
+dat[dat$Mom=="mom1idsbox1v.wav",]
+dat[dat$Mom=="mom9pdsball7v.wav",]
+
+
+```
+
+## Figs 1-2
+
+Get average point vowels and draw figures 1 & 2 -- TODO use the colors that are in the paper, & add labels of word as in the paper.
+
+Note that they don't look identical.
+
+In the ball group, boot is overlapping across IDS & PDS in the paper, but it's not here; and bead also looks different across the two.
+
+```{r fig1}
+
+group.colors <- c(ads = "black", ids = "red", pds ="blue")
+
+
+p <- ggplot(subset(overall_means,stim_group=="box"), aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
+  geom_polygon(data = subset(overall_means,stim_group=="box") ,
   aes(
      x=f1 ,
     y=f2 ,
     group=ds
-  ), alpha = 0.3) +
-  geom_point()
+  ), fill=NA) + #alpha = 0.3 (if we want fill
+  geom_point() +ggtitle("Box")+ scale_fill_manual(values=group.colors)
+p
+```
+
+In box, the IDS /i+ goes up to 3k here, but only 2.8k in the paper
+
+```{r fig2}
+p <- ggplot(subset(overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(overall_means,stim_group=="ball") ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() +ggtitle("Ball") 
+p
 
 ```
 
-Values for ball IDS/PDS look slightly different.
+## Vowel space calculations
 
 Next we calculate vowel space for each mom and register.
 ```{r calc-space}
@@ -120,6 +174,8 @@ read.csv("vs.csv")->vs
 
 ```
 
+## ANOVA
+
 A within-subject analysis of variance (ANOVA) on average vowel space across
 listener conditions (3=IDS, PDS, ADS) revealed a significant main effect (F(2,18) = 6.04,
 p &lt; .02), with paired contrasts indicating that the average vowel spaces for IDS and
@@ -128,9 +184,35 @@ vowel space of ADS (IDS v. ADS, t(9) = 3.79, p &lt; .005) and (PDS v. ADS, t(9) 
 = .05; see Figure 1a and b).
 
 ANOVA: not the same F or dfs
+
+explanations from Robin: "To conduct a repeated-measures ANOVA in SPSS, we do not specify the repeated-measures factor and the dependent variable in the SPSS data file. Instead, the SPSS data file contains several quantitative variables. The number of quantitative variables is equal to the number of levels of the within-subjects factor. The scores on any one of these quantitative variables are the scores on the dependent variable for a single level of the within-subjects factor. Although we do not define the within-subjects factor in the SPSS data file, we specify it in the dialog box for the General Linear Model Repeated-Measures procedure. To define the factor, we give a name to the within-subjects factor, specify the number of levels of this factor, and indicate the quantitative variables in the data set associated with the levels of the within-subjects factor.  " and "the error term in the SPSS repeated measures model is (n-1) for sample (10-1=9) x (k-1) for the number of measures per sample (3-1=2);  so 9 x 2 = 18 (for the denominator)."
+
 ```{r}
+#SPSS
+#GLM- repeated measures, call the factor "listener", then select the cols, SS type III
+#figure out dg -- which should it be?
+#am I really running an ANOVA, the way she is?
 
 summary(aov(vss~ds + (1/mom),data=vs))
+
+#https://mikebyrnehfhci.wordpress.com/2015/08/03/translating-spss-to-r-mixed-repeated-measures-anova/
+#https://rpubs.com/tomhardwicke/anova-check
+library(car)
+mylm = lm(vss~ds + (1/mom),data=vs)
+Anova(mylm,type=2)
+Anova(mylm,type=3)
+
+library(ez)
+
+ez_outcome=ezANOVA(vs, dv=vss, wid=mom, within=ds, detailed=T,
+  return_aov = TRUE)
+model.tables(ez_outcome$aov, "means")
+model.tables(ez_outcome$aov, "effects")
+
+vs %>%
+    group_by(ds) %>%
+    dplyr::summarize(mvs = mean(vss, na.rm=TRUE)) 
+
 
 ```
 
@@ -191,12 +273,7 @@ summary(lmer(f2.sd~ds+v + (1|motID),data=sds))
 
 ```
 
-Note there are some likely outliers (3 F2 a outliers):
 
-```{r}
-ggplot(dat, aes(x=f1, y=f2, color=ds)) +
-  geom_text(label=dat$v)
-```
 
 We cannot really see variability easily in any of these graphs...
 
