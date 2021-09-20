@@ -19,30 +19,36 @@ library(haven)
 - why different Fs: because the vss data was different (due to formula switch)
 - explain about 2 rows that are excluded, & possible mismatch
 - do we have pitch.txt & formant.txt outputted by script?
+  - no, but we have output by mom! Alex to integrate
 - we can also leave that be, since by now we are aligned in terms of means for point vowels?
+  - no, because duration & pitch are incorrectly attributed
 - not sure what to do about the fact that our vowel triangles don't look the same -- how were those generated? perhaps they are not over the same tokens?
+  - mystery solved! i and u based on all moms in both figures
+  - what shall we do, single figure for all moms?
 - "REAL" decisions:
-  - removing outliers
-  - removing items from f1/2 when no f0
-  - doing ANOVA first, then mixed model
-  - (I don't think software matters!)
+  - removing outliers? -- yes
+  - removing items from f1/2 when no f0 -- keeping them because they are not outliers
+  - doing ANOVA first, then mixed model- agreed
+  - (I don't think software matters!) - ANOVA in spss, lmer in r
+
+### interim done:
+- switched input file, results are stable
+- add confidence intervals to vowel space, incorporate results to paper
+
 
 ## Replication
 
 In this section, I'm just doing again the analyses that are already in the [manuscript](https://docs.google.com/document/d/1iQkz4HziQi6ECLrSMRTXtzBQyt29a5Ep/edit). Those were done with SPSS, so this is more replication than reproduction.
 
 ```{r readin}
-read_sav("input/Working Data File Aug 25 2021.sav")->spss
 
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
-read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
-#dat[is.na(dat$Word),] #most NA lines are totally empty -- remove
-dat[!is.na(dat$Word),]->dat
-#dim(dat) #614 obs
+#read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
+read.csv("input/Puppy Data Raw/Sheet1-Table 1.csv")->dat
+dim(dat) #614 obs
 
 #excluded data
 dat[!(dat$Mom %in% c( " Mom2ADSbox5beadv.wav "," Mom2ADSbox5bootv.wav " )),]->dat
-#dim(dat) #612 obs
 
 
 dat$Mom=tolower(gsub(" ","",dat$Mom)) #clean up
@@ -70,30 +76,11 @@ dat$stim_group<-"box"
 dat$stim_group[dat$motID %in% c("mom7","mom8","mom9","mom10")]<-"ball"
 
 
-#table(dat$v)
-# sum(table(dat$v))
-
-dat %>%
-    group_by(motID,ds,v,stim_group) %>%
-    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
-                     f2 = mean(f2, na.rm=TRUE)) -> means
-
-
-means %>%
-    group_by(ds,v,stim_group) %>%
-    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
-                     f2 = mean(f2, na.rm=TRUE)) -> overall_means
-
-dat %>%
-    group_by(ds,v,stim_group) %>%
-    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
-                     f2 = mean(f2, na.rm=TRUE)) -> direct_overall_means
-
 ```
 
 Checking that we are getting the same means against the means in the xls file -- we are.
 
-```{r chk-means-xls}
+```{r chk-means-xls, eval=F}
 excel_avg=dat[!is.na(dat$F1.mean),c("Mom","F1.mean","F2.mean","motID","ds","v")]
 excel_avg$uID=paste(excel_avg$motID,excel_avg$ds,excel_avg$v)
 means$uID=paste(means$motID,means$ds,means$v)
@@ -106,7 +93,9 @@ test[round(test$F2.mean)!=round(test$f2),c("Mom","F2.mean","f2")]
 Checking that we are getting the same means against the means in the sav file -- we are.
 
 
-```{r chk-means-sav}
+```{r chk-means-sav,eval=F}
+read_sav("input/Working Data File Aug 25 2021.sav")->spss
+
 spss[!is.na(spss$ADBallF1),]->spss #remove empty lines
 spss$motID<-tolower(gsub(" ","",spss$V1)) #clean motID
 spss[,-1]->spss
@@ -149,6 +138,41 @@ dat[dat$Mom=="mom1idsbox5v.wav",]
 dat[dat$Mom=="mom1idsbox1v.wav",]
 dat[dat$Mom=="mom9pdsball7v.wav",]
 
+
+```
+
+
+```{r outliers and means}
+dat->old_dat
+outliers=c("mom1idsbox5v.wav","mom1idsbox1v.wav","mom9pdsball7v.wav")
+dat[!(dat$Mom %in% outliers),]->dat
+
+#old_dat[old_dat$Mom %in% outliers,]
+dim(dat) #609 obs
+
+#table(dat$v)
+# sum(table(dat$v))
+
+dat %>%
+    group_by(motID,ds,v,stim_group) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> means
+
+
+means %>%
+    group_by(ds,v,stim_group) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> overall_means
+
+means %>%
+    group_by(ds,v) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> overall_means_nogroup
+
+dat %>%
+    group_by(ds,v,stim_group) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> direct_overall_means
 
 ```
 
@@ -220,6 +244,21 @@ p
 
 ```
 
+```{r fig2-all}
+p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(overall_means_nogroup) ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() +ggtitle("Overall") +
+  annotate("text", x= 350,y=2800,label="i") +
+  annotate("text", x= 850,y=1350,label="a") +
+  annotate("text", x= 350,y=1350,label="u")
+p 
+
+```
 ## Vowel space calculations
 
 Next we calculate vowel space for each mom and register.
@@ -341,10 +380,10 @@ t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ads"],paired=T)
 Duration and pitch can be done at the item level
 
 ```{r}
-mymod=lmer(Vowel.Duration~ds + (1|motID),data=dat)
+mymod=lmer(duration~ds + (1|motID),data=dat)
 summary(mymod)
 
-dat$Pitch=as.numeric(as.character(dat$Pitch))
+dat$Pitch=as.numeric(as.character(dat$pitch))
 mymod=lmer(Pitch~ds + (1|motID),data=dat)
 summary(mymod)
 
