@@ -249,25 +249,6 @@ pre code {
 <p>A within-subject analysis of variance (ANOVA) on average vowel space across listener conditions (3=IDS, PDS, ADS) revealed a significant main effect (F(2,18) = 6.04, p &lt; .02), with paired contrasts indicating that the average vowel spaces for IDS and PDS were not significantly different, t(9) = .98, p &gt; .05, but were both greater than the vowel space of ADS (IDS v. ADS, t(9) = 3.79, p &lt; .005) and (PDS v. ADS, t(9) = 2.24, p = .05; see Figure 1a and b).</p>
 <p>ANOVA: not the same F or dfs</p>
 <p>explanations from Robin: “To conduct a repeated-measures ANOVA in SPSS, we do not specify the repeated-measures factor and the dependent variable in the SPSS data file. Instead, the SPSS data file contains several quantitative variables. The number of quantitative variables is equal to the number of levels of the within-subjects factor. The scores on any one of these quantitative variables are the scores on the dependent variable for a single level of the within-subjects factor. Although we do not define the within-subjects factor in the SPSS data file, we specify it in the dialog box for the General Linear Model Repeated-Measures procedure. To define the factor, we give a name to the within-subjects factor, specify the number of levels of this factor, and indicate the quantitative variables in the data set associated with the levels of the within-subjects factor.” and “the error term in the SPSS repeated measures model is (n-1) for sample (10-1=9) x (k-1) for the number of measures per sample (3-1=2); so 9 x 2 = 18 (for the denominator).”</p>
-<pre><code>##             Df    Sum Sq   Mean Sq F value Pr(&gt;F)  
-## ds           2 4.871e+11 2.436e+11   3.635   0.04 *
-## Residuals   27 1.809e+12 6.701e+10                 
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<pre><code>## Loading required package: carData</code></pre>
-<pre><code>## 
-## Attaching package: &#39;car&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     recode</code></pre>
-<pre><code>## Anova Table (Type II tests)
-## 
-## Response: vss
-##               Sum Sq Df F value  Pr(&gt;F)  
-## ds        4.8711e+11  2  3.6347 0.04001 *
-## Residuals 1.8092e+12 27                  
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <pre><code>## Anova Table (Type III tests)
 ## 
 ## Response: vss
@@ -288,72 +269,6 @@ pre code {
 ## ds
 ##    ads    ids    pds 
 ## 590331 886587 823548</code></pre>
-<pre><code>## Tables of effects
-## 
-##  ds 
-## ds
-##     ads     ids     pds 
-## -176491  119765   56726</code></pre>
-<pre><code>## # A tibble: 3 × 2
-##   ds        mvs
-##   &lt;chr&gt;   &lt;dbl&gt;
-## 1 ads   590331.
-## 2 ids   886587.
-## 3 pds   823548.</code></pre>
-<p>mixed model versions yield very similar results</p>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre><code>## 
-## Attaching package: &#39;lmerTest&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:lme4&#39;:
-## 
-##     lmer</code></pre>
-<pre><code>## The following object is masked from &#39;package:stats&#39;:
-## 
-##     step</code></pre>
-<pre><code>## Warning in as_lmerModLT(model, devfun): Model may not have converged with 1
-## eigenvalue close to zero: 1.2e-09</code></pre>
-<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
-## lmerModLmerTest]
-## Formula: vss ~ ds + (1 | mom)
-##    Data: vs
-## 
-## REML criterion at convergence: 756.4
-## 
-## Scaled residuals: 
-##     Min      1Q  Median      3Q     Max 
-## -2.1852 -0.5763  0.1686  0.7017  1.2883 
-## 
-## Random effects:
-##  Groups   Name        Variance  Std.Dev.
-##  mom      (Intercept) 5.631e+09  75037  
-##  Residual             6.138e+10 247745  
-## Number of obs: 30, groups:  mom, 10
-## 
-## Fixed effects:
-##              Estimate Std. Error        df t value Pr(&gt;|t|)    
-## (Intercept) 5.903e+05  8.186e+04 5.937e+01   7.212 1.15e-09 ***
-## dsids       2.963e+05  1.108e+05 7.116e+20   2.674   0.0075 ** 
-## dspds       2.332e+05  1.108e+05 1.150e+21   2.105   0.0353 *  
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Correlation of Fixed Effects:
-##       (Intr) dsids 
-## dsids -0.677       
-## dspds -0.677  0.500</code></pre>
-<pre><code>## Analysis of Deviance Table (Type III Wald chisquare tests)
-## 
-## Response: vss
-##               Chisq Df Pr(&gt;Chisq)    
-## (Intercept) 52.0075  1  5.529e-13 ***
-## ds           7.9362  2    0.01891 *  
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <p>Paired contrasts – same pattern of results but different t values.</p>
 <pre><code>## 
 ##  Paired t-test

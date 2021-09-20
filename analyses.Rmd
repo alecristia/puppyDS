@@ -10,6 +10,11 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(haven)
+library(car)
+library(ez)
+library(lme4)
+library(lmerTest)
+
 ```
 
 ## TODO discussion 2021-09-20
@@ -95,7 +100,7 @@ Checking that we are getting the same means against the means in the sav file --
 
 ```{r chk-means-sav,eval=F}
 read_sav("input/Working Data File Aug 25 2021.sav")->spss
-
+write.csv(spss,"output/spss.csv")
 spss[!is.na(spss$ADBallF1),]->spss #remove empty lines
 spss$motID<-tolower(gsub(" ","",spss$V1)) #clean motID
 spss[,-1]->spss
@@ -306,12 +311,12 @@ for(thismom in levels(factor(dat$motID))) for(thisds in levels(factor(dat$ds))){
 }
 
 colnames(vs)<-c("vss","mom","ds")
-write.csv(vs,"vs.csv",row.names=F)
+write.csv(vs,"output/vs.csv",row.names=F)
 
-read.csv("vs.csv")->vs
+read.csv("output/vs.csv")->vs
 
-pivot_wider(vs,names_from="ds",values_from="vss")->vs_long
-write.csv(vs_long,"vs_long.csv",row.names=F)
+pivot_wider(vs,names_from="ds",values_from="vss")->vs_wide
+write.csv(vs_wide,"output/vs_wide.csv",row.names=F)
 
 ```
 
@@ -329,44 +334,21 @@ ANOVA: not the same F or dfs
 explanations from Robin: "To conduct a repeated-measures ANOVA in SPSS, we do not specify the repeated-measures factor and the dependent variable in the SPSS data file. Instead, the SPSS data file contains several quantitative variables. The number of quantitative variables is equal to the number of levels of the within-subjects factor. The scores on any one of these quantitative variables are the scores on the dependent variable for a single level of the within-subjects factor. Although we do not define the within-subjects factor in the SPSS data file, we specify it in the dialog box for the General Linear Model Repeated-Measures procedure. To define the factor, we give a name to the within-subjects factor, specify the number of levels of this factor, and indicate the quantitative variables in the data set associated with the levels of the within-subjects factor.  " and "the error term in the SPSS repeated measures model is (n-1) for sample (10-1=9) x (k-1) for the number of measures per sample (3-1=2);  so 9 x 2 = 18 (for the denominator)."
 
 ```{r}
-#SPSS
-#GLM- repeated measures, call the factor "listener", then select the cols, SS type III
-#figure out dg -- which should it be?
-#am I really running an ANOVA, the way she is?
-
-summary(aov(vss~ds + (1/mom),data=vs))
 
 #https://mikebyrnehfhci.wordpress.com/2015/08/03/translating-spss-to-r-mixed-repeated-measures-anova/
 #https://rpubs.com/tomhardwicke/anova-check
-library(car)
 mylm = lm(vss~ds + (1/mom),data=vs)
-Anova(mylm,type=2)
 Anova(mylm,type=3)
 
-library(ez)
 
 ez_outcome=ezANOVA(vs, dv=vss, wid=mom, within=ds, detailed=T,
   return_aov = TRUE)
 model.tables(ez_outcome$aov, "means")
-model.tables(ez_outcome$aov, "effects")
 
-vs %>%
-    group_by(ds) %>%
-    dplyr::summarize(mvs = mean(vss, na.rm=TRUE)) 
 
 ```
 
-mixed model versions yield very similar results
 
-```{r}
-library(lme4)
-library(lmerTest)
-mymod=lmer(vss~ds + (1|mom),data=vs)
-summary(mymod)
-library(car)
-Anova(mymod,type="III")
-
-```
 
 Paired contrasts -- same pattern of results but different t values.
 
