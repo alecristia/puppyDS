@@ -1,0 +1,131 @@
+#F0_duration_female_batch  July 3, 2003 
+#Does batch processing of file duration and F0 statistics for adult female voice
+#This script works all .wav files within a specified directory. The input must be a file which consists only of a vowel whose duration, 
+# pitch and formants are to be measured. The pitch and formant analysis settings are for an adult female voice.
+
+#For each file processed, the script returns one line of these ordered values to file pitch.txt: filename, duration of the file, mean F0, standard deviation of F0, maximum F0, 
+# minimum F0, the range in F0 (max - min), the time of max F0 normalised as proportion of file length, the time of min F0 
+# normalised as proportion of file length, the timepoint in seconds for max F0, the timepoint in seconds for min F0, the time 
+# in seconds 25 ms after start of file, the time in seconds at midpoint, the time in seconds 25 ms before end of file,
+# F0 estimate at 25 ms into file, F0 estimate at midpoint, F0 estimate at 25 ms before end of file.
+
+#For each file processed, the script returns these ordered values to file formant.txt: filename, mean F1, mean F2, mean F3
+# F1 at startpoint, F1 at midpoint, F1 at endpoint, F2 at startpoint, F2 at midpoint, F2 at endpoint, F3 at startpoint, F3 at
+# midpoint, F3 at endpoint.
+
+
+# In all values output, F0 and formants are expressed to nearest Hz, and time is in seconds (to nearest ms).
+
+
+#Reads all files in directory into object list
+directory$ = "C:\Documents and Settings\cooperr\Desktop\moms1-6 vowels"
+Create Strings as file list... list 'directory$'/*.wav
+numberOfFiles = Get number of strings
+for ifile to numberOfFiles
+   select Strings list
+   fileName$ = Get string... ifile
+   Read from file... 'directory$'/'fileName$'
+
+#Get pitch analysis with min F0 of 125 Hz and max F0 of 800 Hz, i.e. appropriate for adult female voice
+To Pitch... 0.01 125 800
+
+#Get duration of the vowel file and its starting and ending times (in seconds)
+vduration = Get duration
+
+#Get pitch statistics for the vowel file (in Hz)
+maxF0 = Get maximum... 0 0 Hertz Parabolic
+maxF0time = Get time of maximum... 0 0 Hertz Parabolic
+minF0 = Get minimum... 0 0 Hertz Parabolic
+rangeF0 = maxF0 - minF0
+minF0time = Get time of minimum... 0 0 Hertz Parabolic
+meanF0 = Get mean... 0 0 Hertz
+stdevF0 = Get standard deviation... 0 0 Hertz
+
+#Express times for max and min F0 as ratio of file length
+maxF0timeratio = maxF0time / vduration
+minF0timeratio = minF0time / vduration
+
+#Get time and F0 estimates for 25 ms past start, for midpoint, and for 25 ms before end of vowel
+ startpoint = 0.01
+ midpoint = vduration / 2
+ endpoint = vduration - 0.01
+startF0 = Get value at time... startpoint Hertz Linear
+midF0 = Get value at time... midpoint Hertz Linear
+endF0 = Get value at time... endpoint Hertz Linear
+
+#Write pitch results to file
+ fileappend /pitch.txt 'fileName$' 'tab$' 'vduration:3' 'tab$' 'meanF0:0' 'tab$' 'stdevF0:0' 'tab$' 'maxF0:0' 'tab$' 'minF0:0' 'tab$' 'rangeF0:0' 'tab$' 'maxF0timeratio:3' 'tab$' 'minF0timeratio:3' 'tab$' 'maxF0time:3' 'tab$' 'minF0time:3' 'tab$' 'startpoint:3' 'tab$' 'midpoint:3' 'tab$' 'endpoint:3' 'tab$' 'startF0:0' 'tab$' 'midF0:0' 'tab$' 'endF0:0' 'newline$'
+
+endfor
+
+#Remove all objects from objects window
+select all
+Remove
+
+
+#Reads all files in directory into object list
+directory$ = "C:\Documents and Settings\cooperr\Desktop\moms1-6 vowels"
+
+Create Strings as file list... list 'directory$'/*.wav
+numberOfFiles = Get number of strings
+for ifile to numberOfFiles
+   select Strings list
+   fileName$ = Get string... ifile
+   Read from file... 'directory$'/'fileName$'
+
+#Read name of selected Sound into variable
+audio$ = selected$ ("Sound")
+
+#Get pitch analysis with min F0 of 125 Hz and max F0 of 800 Hz, i.e. appropriate for adult female voice
+To Pitch... 0.01 125 800
+
+#Get duration of the vowel file and its starting and ending times (in seconds)
+vduration = Get duration
+
+#Get pitch statistics for the vowel file (in Hz)
+maxF0 = Get maximum... 0 0 Hertz Parabolic
+maxF0time = Get time of maximum... 0 0 Hertz Parabolic
+minF0 = Get minimum... 0 0 Hertz Parabolic
+rangeF0 = maxF0 - minF0
+minF0time = Get time of minimum... 0 0 Hertz Parabolic
+meanF0 = Get mean... 0 0 Hertz
+stdevF0 = Get standard deviation... 0 0 Hertz
+
+#Express times for max and min F0 as ratio of file length
+maxF0timeratio = maxF0time / vduration
+minF0timeratio = minF0time / vduration
+
+#Get time and F0 estimates for 25 ms past start, for midpoint, and for 25 ms before end of vowel
+ startpoint = 0.01
+ midpoint = vduration / 2
+ endpoint = vduration - 0.01
+startF0 = Get value at time... startpoint Hertz Linear
+midF0 = Get value at time... midpoint Hertz Linear
+endF0 = Get value at time... endpoint Hertz Linear
+
+#Select the object whose filename is entered into variable called audio
+select Sound 'audio$'
+
+#Downsamples file to 11000 Hz sampling rate (appropriate for 5 formant analysis of adult female) and does formant analysis.
+Resample... 11000 50
+To Formant (burg)... 0.01 5 5500 0.01 50
+
+#Gets F1 values in Hertz at 25 ms into file, midpoint of file, and 25 ms before end of file.
+midF1 = Get value at time... 1 midpoint Hertz Linear
+
+#Gets F2 values in Hertz at 25 ms into file, midpoint of file, and 25 ms before end of file.
+midF2 = Get value at time... 2 midpoint Hertz Linear
+
+#Gets F3 values in Hertz at 25 ms into file, midpoint of file, and 25 ms before end of file.
+midF3 = Get value at time... 3 midpoint Hertz Linear
+
+
+#Write formant results to file
+fileappend /formant.txt  'fileName$' 'tab$' 'meanF1:0' 'tab$' 'meanF2:0' 'tab$' 'meanF3:0' 'tab$' 'midF1:0' 'tab$' 'midF2:0' 'tab$' 'midF3:0' 'newline$'
+
+endfor
+
+#Remove all objects from objects window
+select all
+Remove
+

@@ -4,22 +4,39 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = F)
 #library(xlsx)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library(phonR)
+library(haven)
 ```
+
+## TODO discussion 2021-09-20
+
+- why negative: because inverted u and a in 2 places, see chunk calc-space
+- why different dfs: I wasn't doing the same analysis, now I am
+- why different Fs: because the vss data was different (due to formula switch)
+- explain about 2 rows that are excluded, & possible mismatch
+- do we have pitch.txt & formant.txt outputted by script?
+- we can also leave that be, since by now we are aligned in terms of means for point vowels?
+- not sure what to do about the fact that our vowel triangles don't look the same -- how were those generated? perhaps they are not over the same tokens?
+- "REAL" decisions:
+  - removing outliers
+  - removing items from f1/2 when no f0
+  - doing ANOVA first, then mixed model
+  - (I don't think software matters!)
 
 ## Replication
 
 In this section, I'm just doing again the analyses that are already in the [manuscript](https://docs.google.com/document/d/1iQkz4HziQi6ECLrSMRTXtzBQyt29a5Ep/edit). Those were done with SPSS, so this is more replication than reproduction.
 
 ```{r readin}
+read_sav("input/Working Data File Aug 25 2021.sav")->spss
+
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
-read.csv("Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
-dat[is.na(dat$Word),] #NA lines are totally empty -- remove
+read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
+#dat[is.na(dat$Word),] #most NA lines are totally empty -- remove
 dat[!is.na(dat$Word),]->dat
 #dim(dat) #614 obs
 
@@ -67,12 +84,16 @@ means %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> overall_means
 
+dat %>%
+    group_by(ds,v,stim_group) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> direct_overall_means
 
 ```
 
-Checking that we are getting the same means -- we are.
+Checking that we are getting the same means against the means in the xls file -- we are.
 
-```{r}
+```{r chk-means-xls}
 excel_avg=dat[!is.na(dat$F1.mean),c("Mom","F1.mean","F2.mean","motID","ds","v")]
 excel_avg$uID=paste(excel_avg$motID,excel_avg$ds,excel_avg$v)
 means$uID=paste(means$motID,means$ds,means$v)
@@ -81,6 +102,36 @@ test[round(test$F1.mean)!=round(test$f1),c("Mom","F1.mean","f1")]
 test[round(test$F2.mean)!=round(test$f2),c("Mom","F2.mean","f2")]
 
 ```
+
+Checking that we are getting the same means against the means in the sav file -- we are.
+
+
+```{r chk-means-sav}
+spss[!is.na(spss$ADBallF1),]->spss #remove empty lines
+spss$motID<-tolower(gsub(" ","",spss$V1)) #clean motID
+spss[,-1]->spss
+
+pivot_longer(spss,-motID,values_to="value",names_to = "type")->long
+long$ds=long$v=long$f=NA
+long$ds[grep("AD",long$type)]<-"ads"
+long$ds[grep("ID",long$type)]<-"ids"
+long$ds[grep("PD",long$type)]<-"pds"
+long$v[grep("Ball",long$type)]<-"a"
+long$v[grep("Bead",long$type)]<-"i"
+long$v[grep("Boot",long$type)]<-"u"
+long$f[grep("F1",long$type)]<-"f1"
+long$f[grep("F2",long$type)]<-"f2"
+long[!is.na(long$f),c("motID","ds","v","f","value")]->long
+
+pivot_longer(means,f1:f2,names_to="f",values_to = "value")->means_long
+
+# sort and compare
+means_long$unique=paste(means_long$motID,means_long$ds,means_long$v,means_long$f)
+long$unique=paste(long$motID,long$ds,long$v,long$f)
+sum(round(means_long[order(means_long$unique),"value"])==round(long[order(long$unique),"value"]))
+
+```
+
 
 Note there are some likely outliers:
 
@@ -107,8 +158,6 @@ Get average point vowels and draw figures 1 & 2 -- TODO use the colors that are 
 
 Note that they don't look identical.
 
-In the ball group, boot is overlapping across IDS & PDS in the paper, but it's not here; and bead also looks different across the two.
-
 ```{r fig1}
 
 group.colors <- c(ads = "black", ids = "red", pds ="blue")
@@ -121,11 +170,29 @@ p <- ggplot(subset(overall_means,stim_group=="box"), aes(x = f1, y = f2, col = f
     y=f2 ,
     group=ds
   ), fill=NA) + #alpha = 0.3 (if we want fill
-  geom_point() +ggtitle("Box")+ scale_fill_manual(values=group.colors)
+  geom_point() +ggtitle("Box - average first within moms")+ scale_fill_manual(values=group.colors)
 p
 ```
 
-In box, the IDS /i+ goes up to 3k here, but only 2.8k in the paper
+Try again, now by using overall means that do not average first within mothers!
+
+```{r fig1-direct}
+
+group.colors <- c(ads = "black", ids = "red", pds ="blue")
+
+
+p <- ggplot(subset(direct_overall_means,stim_group=="box"), aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
+  geom_polygon(data = subset(direct_overall_means,stim_group=="box") ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill
+  geom_point() +ggtitle("Box - average across all tokens")+ scale_fill_manual(values=group.colors)
+p
+```
+
+Now figure 2 (ball)
 
 ```{r fig2}
 p <- ggplot(subset(overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = factor(ds)))+
@@ -135,7 +202,20 @@ p <- ggplot(subset(overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = 
     y=f2 ,
     group=ds
   ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() +ggtitle("Ball") 
+  geom_point() +ggtitle("Ball - averaging first within moms") 
+p
+
+```
+
+```{r fig2-direct}
+p <- ggplot(subset(direct_overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(direct_overall_means,stim_group=="ball") ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() +ggtitle("Ball - averaging across all tokens") 
 p
 
 ```
@@ -153,11 +233,31 @@ Next we calculate vowel space for each mom and register.
 
 #formula from footnote
 # (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
+# from syntax file
+# COMPUTE IDVowelSpace1 = (IDBeadF1 * (IDBoxF2-IDBootF2) + IDBoxF1 * (IDBootF2
+#  -IDBeadF2)+IDBootF1*(IDBeadF2-IDBoxF2))/2 .
+# EXECUTE .
+# COMPUTE PDVowelSpace1 = (PDBeadF1 * (PDBoxF2-PDBootF2) + PDBoxF1 * (PDBootF2
+#  -PDBeadF2)+PDBootF1*(PDBeadF2-PDBoxF2))/2 .
+# EXECUTE .
+# COMPUTE ADVowelSpace1 = (ADBeadF1 * (ADBoxF2-ADBootF2) + ADBoxF1 * (ADBootF2
+#  -ADBeadF2)+ADBootF1*(ADBeadF2-ADBoxF2))/2 .
+# EXECUTE .
+# COMPUTE IDVowelSpace2 = (IDBeadF1 * (IDBallF2-IDBootF2) + IDBallF1 * (IDBootF2
+#  -IDBeadF2)+IDBootF1*(IDBeadF2-IDBallF2))/2 .
+# EXECUTE .
+# COMPUTE PDVowelSpace2 = (PDBeadF1 * (PDBallF2-PDBootF2) + PDBallF1 * (PDBootF2
+#  -PDBeadF2)+PDBootF1*(PDBeadF2-PDBallF2))/2 .
+# EXECUTE .
+# COMPUTE ADVowelSpace2 = (ADBeadF1 * (ADBallF2-ADBootF2) + ADBallF1 * (ADBootF2
+#  -ADBeadF2)+ADBootF1*(ADBeadF2-ADBallF2))/2 .
+# EXECUTE .
 vs=NULL
 for(thismom in levels(factor(dat$motID))) for(thisds in levels(factor(dat$ds))){
   mydat=subset(means,means$motID==thismom & means$ds==thisds)
   vs=rbind(vs,
            cbind(
+# (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
       (mydat$f1[mydat$v=="i" & mydat$motID==thismom]*(mydat$f2[mydat$v=="u" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
         mydat$f1[mydat$v=="u" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
         mydat$f1[mydat$v=="a" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="u" & mydat$motID==thismom])
@@ -171,6 +271,8 @@ write.csv(vs,"vs.csv",row.names=F)
 
 read.csv("vs.csv")->vs
 
+pivot_wider(vs,names_from="ds",values_from="vss")->vs_long
+write.csv(vs_long,"vs_long.csv",row.names=F)
 
 ```
 
@@ -212,7 +314,6 @@ model.tables(ez_outcome$aov, "effects")
 vs %>%
     group_by(ds) %>%
     dplyr::summarize(mvs = mean(vss, na.rm=TRUE)) 
-
 
 ```
 
