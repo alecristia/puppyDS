@@ -1,6 +1,8 @@
 ---
 title: "Analyses"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -80,6 +82,11 @@ dat$v[grep("box",dat$Mom)]<-"a"
 dat$stim_group<-"box"
 dat$stim_group[dat$motID %in% c("mom7","mom8","mom9","mom10")]<-"ball"
 
+dat$target=NA
+dat$target[grep("bead",dat$Mom)]<-"bead"
+dat$target[grep("boot",dat$Mom)]<-"boot"
+dat$target[grep("ball",dat$Mom)]<-"ball"
+dat$target[grep("box",dat$Mom)]<-"box"
 
 ```
 
@@ -159,7 +166,7 @@ dim(dat) #609 obs
 # sum(table(dat$v))
 
 dat %>%
-    group_by(motID,ds,v,stim_group) %>%
+    group_by(motID,ds,v,stim_group,target) %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> means
 
@@ -169,87 +176,70 @@ means %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> overall_means
 
+dat %>%
+    group_by(motID,ds,target) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> means_target
+means_target %>%
+    group_by(ds,target) %>%
+    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
+                     f2 = mean(f2, na.rm=TRUE)) -> overall_means_target
+
+means %>%
+    group_by(ds,target) %>%
+    dplyr::summarize(f1 = sd(f1, na.rm=TRUE),
+                     f2 = sd(f2, na.rm=TRUE)) -> sds
+
 means %>%
     group_by(ds,v) %>%
     dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
                      f2 = mean(f2, na.rm=TRUE)) -> overall_means_nogroup
 
-dat %>%
-    group_by(ds,v,stim_group) %>%
-    dplyr::summarize(f1 = mean(f1, na.rm=TRUE),
-                     f2 = mean(f2, na.rm=TRUE)) -> direct_overall_means
+
 
 ```
 
 ## Figs 1-2
 
-Get average point vowels and draw figures 1 & 2 -- TODO use the colors that are in the paper, & add labels of word as in the paper.
+Get average point vowels and draw figures 1 & 2.
 
-Note that they don't look identical.
+Note that they don't look identical. That is because Fig 1 and 2 were using all 10 moms for the /i/ and /u/ points, but only the relevant moms for the /a/ points. We decide to just collapse across groups and have a single figure with all 10 moms.
 
-```{r fig1}
+First check whether there are significant differences for each vowel on F1 and F2. Differences on F2 for both /i/ and /u/; n/s differences on F1 for either of those; neither F1 nor F2 differ across registers for /a/.
 
-group.colors <- c(ads = "black", ids = "red", pds ="blue")
+```{r}
 
+mymod=lmer(f1~ds + (1 + ds|motID),data=dat,subset=c(v=="i"))
+summary(mymod)
 
-p <- ggplot(subset(overall_means,stim_group=="box"), aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
-  geom_polygon(data = subset(overall_means,stim_group=="box") ,
-  aes(
-     x=f1 ,
-    y=f2 ,
-    group=ds
-  ), fill=NA) + #alpha = 0.3 (if we want fill
-  geom_point() +ggtitle("Box - average first within moms")+ scale_fill_manual(values=group.colors)
-p
+mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="i"))
+summary(mymod)
+
+mymod=lmer(f1~ds + (1+ ds|motID),data=dat,subset=c(v=="u"))
+summary(mymod)
+
+mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="u"))
+summary(mymod)
+
+mymod=lmer(f1~ds + (1+ ds|motID),data=dat,subset=c(v=="a"))
+summary(mymod)
+
+mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="a"))
+summary(mymod)
 ```
 
-Try again, now by using overall means that do not average first within mothers!
+Last check before merging across groups: whether F1 and F2 differ across the two mom subgroups: They do...
 
-```{r fig1-direct}
+```{r}
+mymod=lmer(f1~ds + stim_group + (1|motID),data=dat,subset=c(v=="a"))
+summary(mymod)
 
-group.colors <- c(ads = "black", ids = "red", pds ="blue")
-
-
-p <- ggplot(subset(direct_overall_means,stim_group=="box"), aes(x = f1, y = f2, col = factor(ds), fill = factor(ds)))+
-  geom_polygon(data = subset(direct_overall_means,stim_group=="box") ,
-  aes(
-     x=f1 ,
-    y=f2 ,
-    group=ds
-  ), fill=NA) + #alpha = 0.3 (if we want fill
-  geom_point() +ggtitle("Box - average across all tokens")+ scale_fill_manual(values=group.colors)
-p
+mymod=lmer(f2~ds + stim_group + (1|motID),data=dat,subset=c(v=="a"))
+summary(mymod)
 ```
 
-Now figure 2 (ball)
 
-```{r fig2}
-p <- ggplot(subset(overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = factor(ds)))+
-  geom_polygon(data = subset(overall_means,stim_group=="ball") ,
-  aes(
-     x=f1 ,
-    y=f2 ,
-    group=ds
-  ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() +ggtitle("Ball - averaging first within moms") 
-p
-
-```
-
-```{r fig2-direct}
-p <- ggplot(subset(direct_overall_means,stim_group=="ball"), aes(x = f1, y = f2, col = factor(ds)))+
-  geom_polygon(data = subset(direct_overall_means,stim_group=="ball") ,
-  aes(
-     x=f1 ,
-    y=f2 ,
-    group=ds
-  ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() +ggtitle("Ball - averaging across all tokens") 
-p
-
-```
-
-```{r fig2-all}
+```{r fig-all}
 p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds)))+
   geom_polygon(data = subset(overall_means_nogroup) ,
   aes(
@@ -257,13 +247,46 @@ p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds))
     y=f2 ,
     group=ds
   ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() +ggtitle("Overall") +
+  geom_point() +
   annotate("text", x= 350,y=2800,label="i") +
   annotate("text", x= 850,y=1350,label="a") +
   annotate("text", x= 350,y=1350,label="u")
 p 
 
 ```
+
+```{r fig-all2}
+
+overall_means_target$target=factor(overall_means_target$target, levels=c("bead","box","ball","boot"), ordered=T)
+overall_means_target[order(overall_means_target$target),]->overall_means_target
+
+sds$target=factor(sds$target, levels=c("bead","box","ball","boot"), ordered=T)
+sds[order(sds$target),]->sds
+
+p <- ggplot(subset(overall_means_target), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(overall_means_target) ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() 
+p 
+
+```
+
+```{r}
+p +  geom_errorbar(aes(ymin = overall_means_target$f2 - sds$f2,ymax = overall_means_target$f2 + sds$f2)) + 
+    geom_errorbarh(aes(xmin = overall_means_target$f1 - sds$f1,xmax = overall_means_target$f1 + sds$f1)) +ggtitle("1 SDs")
+```
+
+
+```{r}
+p +  geom_errorbar(aes(ymin = overall_means_target$f2 - 2*sds$f2,ymax = overall_means_target$f2 + 2*sds$f2)) + 
+    geom_errorbarh(aes(xmin = overall_means_target$f1 - 2*sds$f1,xmax = overall_means_target$f1 + 2*sds$f1)) +ggtitle("2 SDs")
+```
+
+
 ## Vowel space calculations
 
 Next we calculate vowel space for each mom and register.
