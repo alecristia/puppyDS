@@ -51,7 +51,10 @@ In this section, I'm just doing again the analyses that are already in the [manu
 
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
 #read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
-read.csv("input/Puppy Data Raw/Sheet1-Table 1.csv")->dat
+#read.csv("input/Puppy Data Raw/Sheet1-Table 1.csv")->dat
+read.csv("input/MODIFIED_Full Puppy Data Set_Sep 21/Sheet1-Table 1.csv")->dat
+#remove empty rows
+dat=dat[!is.na(dat$Mom) &dat$Mom !="" ,]
 dim(dat) #614 obs
 
 #excluded data
@@ -134,7 +137,7 @@ sum(round(means_long[order(means_long$unique),"value"])==round(long[order(long$u
 ```
 
 
-Note there are some likely outliers:
+Note there are no outliers:
 
 
 ```{r}
@@ -142,23 +145,10 @@ ggplot(dat, aes(x=f1, y=f2, color=ds)) +
   geom_text(label=dat$v)
 ```
 
-we may want to kick them out:
-
-```{r}
-
-dat[dat$Mom=="mom1idsbox5v.wav",]
-dat[dat$Mom=="mom1idsbox1v.wav",]
-dat[dat$Mom=="mom9pdsball7v.wav",]
-
-
-```
-
 
 ```{r outliers and means}
-dat->old_dat
-outliers=c("mom1idsbox5v.wav","mom1idsbox1v.wav","mom9pdsball7v.wav")
-dat[!(dat$Mom %in% outliers),]->dat
 
+table(dat$target)
 #old_dat[old_dat$Mom %in% outliers,]
 dim(dat) #609 obs
 
@@ -199,44 +189,7 @@ means %>%
 
 ```
 
-## Figs 1-2
-
-Get average point vowels and draw figures 1 & 2.
-
-Note that they don't look identical. That is because Fig 1 and 2 were using all 10 moms for the /i/ and /u/ points, but only the relevant moms for the /a/ points. We decide to just collapse across groups and have a single figure with all 10 moms.
-
-First check whether there are significant differences for each vowel on F1 and F2. Differences on F2 for both /i/ and /u/; n/s differences on F1 for either of those; neither F1 nor F2 differ across registers for /a/.
-
-```{r}
-
-mymod=lmer(f1~ds + (1 + ds|motID),data=dat,subset=c(v=="i"))
-summary(mymod)
-
-mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="i"))
-summary(mymod)
-
-mymod=lmer(f1~ds + (1+ ds|motID),data=dat,subset=c(v=="u"))
-summary(mymod)
-
-mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="u"))
-summary(mymod)
-
-mymod=lmer(f1~ds + (1+ ds|motID),data=dat,subset=c(v=="a"))
-summary(mymod)
-
-mymod=lmer(f2~ds + (1+ ds|motID),data=dat,subset=c(v=="a"))
-summary(mymod)
-```
-
-Last check before merging across groups: whether F1 and F2 differ across the two mom subgroups: They do...
-
-```{r}
-mymod=lmer(f1~ds + stim_group + (1|motID),data=dat,subset=c(v=="a"))
-summary(mymod)
-
-mymod=lmer(f2~ds + stim_group + (1|motID),data=dat,subset=c(v=="a"))
-summary(mymod)
-```
+## Fig vowel space
 
 
 ```{r fig-all}
@@ -251,7 +204,10 @@ p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds))
   annotate("text", x= 350,y=2800,label="i") +
   annotate("text", x= 850,y=1350,label="a") +
   annotate("text", x= 350,y=1350,label="u")
-p 
+ 
+pdf("fig1.pdf")
+p
+dev.off()
 
 ```
 
@@ -272,6 +228,8 @@ p <- ggplot(subset(overall_means_target), aes(x = f1, y = f2, col = factor(ds)))
   ), fill=NA) + #alpha = 0.3 (if we want fill)
   geom_point() 
 p 
+
+
 
 ```
 
@@ -366,6 +324,7 @@ Anova(mylm,type=3)
 
 ez_outcome=ezANOVA(vs, dv=vss, wid=mom, within=ds, detailed=T,
   return_aov = TRUE)
+summary(ez_outcome)
 model.tables(ez_outcome$aov, "means")
 
 
@@ -376,62 +335,63 @@ model.tables(ez_outcome$aov, "means")
 Paired contrasts -- same pattern of results but different t values.
 
 ```{r}
+library(effsize)
 t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ids"],paired=T)
+cohen.d(vs$vss[vs$ds=="pds"|vs$ds=="ids"],vs$ds[vs$ds=="pds"|vs$ds=="ids"])
 t.test(vs$vss[vs$ds=="ids"],vs$vss[vs$ds=="ads"],paired=T)
+cohen.d(vs$vss[vs$ds=="ads"|vs$ds=="ids"],vs$ds[vs$ds=="ads"|vs$ds=="ids"])
 t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ads"],paired=T)
+cohen.d(vs$vss[vs$ds=="pds"|vs$ds=="ads"],vs$ds[vs$ds=="pds"|vs$ds=="ads"])
 
 ```
+
+## dur, f0, f1, f2
 
 Duration and pitch can be done at the item level
 
 ```{r}
-mymod=lmer(duration~ds + (1|motID),data=dat)
+mymod=lmer(Vowel.Duration~ds*target + (1 + ds|motID),data=dat)
 summary(mymod)
 
-dat$Pitch=as.numeric(as.character(dat$pitch))
-mymod=lmer(Pitch~ds + (1|motID),data=dat)
+dat$Pitch=as.numeric(as.character(dat$Pitch))
+mymod=lmer(Pitch~ds*target + (1+ds|motID),data=dat)
 summary(mymod)
 
 ```
 
+```{r}
+mymod=lmer(f1~ds*target + (1 + ds|motID),data=dat)
+summary(mymod)
+
+mymod=lmer(f2~ds*target + (1|motID),data=dat)
+summary(mymod)
+```
+
+
 ## Variability analyses
+
 Get standard deviation of f1 and f2, separating by mom and register.
 
 ```{r}
 dat %>%
-    group_by(motID,ds,v) %>%
+    group_by(motID,ds,target) %>%
     dplyr::summarize(f1.sd = sd(f1, na.rm=TRUE),
                      f2.sd = sd(f2, na.rm=TRUE)) -> sds
 
 ```
 
-The following mixed model shows register effects on standard deviation of F1: highest for PDS, intermediate for IDS, lowest for ADS.
+
 
 ```{r}
-summary(lmer(f1.sd~ds+v + (1|motID),data=sds))
-
-```
-
-No such effect for SD of F2.
-```{r}
-summary(lmer(f2.sd~ds+v + (1|motID),data=sds))
+summary(lmer(f1.sd~ds*target + (1 |motID),data=sds))
 
 ```
 
 
-
-We cannot really see variability easily in any of these graphs...
-
 ```{r}
-ggplot(dat, aes(x=f1, y=f2, color=ds)) +
-  geom_text(label=dat$v)+ 
-  facet_wrap(~ motID) 
+summary(lmer(f2.sd~ds*target + (1|motID),data=sds))
+
 ```
 
-```{r}
-dat$vds=paste(dat$v,dat$ds)
-ggplot(dat, aes(x=f1, y=f2, color=ds, linetype=vds)) +
- # geom_text(label=dat$v)+ 
-  facet_wrap(~ motID) +  
-  stat_ellipse()
-```
+
+
