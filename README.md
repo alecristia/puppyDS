@@ -19,4 +19,5 @@ analyses of puppy versus infant versus adult directed speech
     - F0_duration_formant_female_batch_latest3.txt received from Robin Sep 10 2021 -- script used to measure formants & f0
     - spss-output.PNG -- screen capture of the spss output from conversation in Sep 13 or so
     - Puppy Data Raw.xls - raw output of the script, received from Robin Sep 20 2021
+    - Averaged F1 F2 and VS for Version 1 and 2.sav, received from Robin Sep 22 2021    - Output for Alex Sep 21 2021.pdf, received from Robin Sep 22 2021    - MODIFIED_Full Puppy Data Set_Sep 21.xls, received from Robin Sep 22 2021
 
