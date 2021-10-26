@@ -1,5 +1,5 @@
 ---
-title: "Analyses"
+title: "analyses"
 output:
   pdf_document: default
   html_document: default
@@ -52,7 +52,7 @@ In this section, I'm just doing again the analyses that are already in the [manu
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
 #read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
 #read.csv("input/Puppy Data Raw/Sheet1-Table 1.csv")->dat
-read.csv("input/MODIFIED_Full Puppy Data Set_Sep 21/Sheet1-Table 1.csv")->dat
+read.csv("input/MODIFIED_Full Puppy Data Set_Sep 21_Sheet1-Table 1.csv")->dat
 #remove empty rows
 dat=dat[!is.na(dat$Mom) &dat$Mom !="" ,]
 dim(dat) #614 obs

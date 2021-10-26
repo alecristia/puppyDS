@@ -2,8 +2,11 @@
 analyses of puppy versus infant versus adult directed speech
 
 ## files
+- supmat.Rmd: Rmarkdown code
+- supmat.pdf: knitted version of analyses 
 - analyses.Rmd: Rmarkdown code
 - analyses.html: knitted version of analyses 
+- analyses.pdf: knitted version of analyses 
 - README.md: this file
 - renv.lock: file storing state of packages used for analyses
 - output /
