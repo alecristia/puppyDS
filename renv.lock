@@ -198,13 +198,6 @@
       "Repository": "CRAN",
       "Hash": "d1b8b1a821ee564a3515fa6c6d5c52dc"
     },
-    "deldir": {
-      "Package": "deldir",
-      "Version": "0.2-10",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "6ba6a411bdd4c1b297bd54e2c5c98385"
-    },
     "digest": {
       "Package": "digest",
       "Version": "0.6.27",
@@ -218,6 +211,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "36f1ae62f026c8ba9f9b5c9a08c03297"
+    },
+    "effsize": {
+      "Package": "effsize",
+      "Version": "0.8.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "8d00cc615bfe85d56071542db9d94db9"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -485,13 +485,6 @@
       "Repository": "CRAN",
       "Hash": "b304ff5955f37b48bd30518faf582929"
     },
-    "phonR": {
-      "Package": "phonR",
-      "Version": "1.0-7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "56ba5863aab51660e142e4409b557b1e"
-    },
     "pillar": {
       "Package": "pillar",
       "Version": "1.6.2",
@@ -505,13 +498,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "01f28d4278f15c76cddbea05899c5d6f"
-    },
-    "plotrix": {
-      "Package": "plotrix",
-      "Version": "3.8-1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "cd2248636c86e6716cd7ae086536cecc"
     },
     "plyr": {
       "Package": "plyr",
@@ -547,13 +533,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "28692dfa3efea8e19d29347d05f5a489"
-    },
-    "rJava": {
-      "Package": "rJava",
-      "Version": "1.0-4",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "0cd1ee479ba887170411af6d81705003"
     },
     "readr": {
       "Package": "readr",
@@ -624,13 +603,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "dfd843ee98246cf932823acf613b05dd"
-    },
-    "splancs": {
-      "Package": "splancs",
-      "Version": "2.01-42",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "a9801f8987696046fce34c33e99322b6"
     },
     "stringi": {
       "Package": "stringi",
@@ -722,20 +694,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "853d45ffff0a9af1e0af017cd359f75e"
-    },
-    "xlsx": {
-      "Package": "xlsx",
-      "Version": "0.6.5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "d24d579f59a3b6da1e1cf4660425443e"
-    },
-    "xlsxjars": {
-      "Package": "xlsxjars",
-      "Version": "0.6.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "4c4b3bc29a916f33f1298dd951133351"
     },
     "yaml": {
       "Package": "yaml",

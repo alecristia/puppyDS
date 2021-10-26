@@ -52,13 +52,14 @@ In this section, I'm just doing again the analyses that are already in the [manu
 #read.xlsx("Full Puppy Data Set_summarized.xls",1)->dat
 #read.csv("input/Full Puppy Data Set_summarized/Sheet1-Table 1.csv")->dat
 #read.csv("input/Puppy Data Raw/Sheet1-Table 1.csv")->dat
-read.csv("input/MODIFIED_Full Puppy Data Set_Sep 21_Sheet1-Table 1.csv")->dat
+#read.csv("input/MODIFIED_Full Puppy Data Set_Sep 21/Sheet1-Table 1.csv")->dat
+read.csv("input/Current Data Set_Sep 30/Modified-Table 1.csv")->dat
 #remove empty rows
 dat=dat[!is.na(dat$Mom) &dat$Mom !="" ,]
 dim(dat) #614 obs
 
 #excluded data
-dat[!(dat$Mom %in% c( " Mom2ADSbox5beadv.wav "," Mom2ADSbox5bootv.wav " )),]->dat
+#dat[!(dat$Mom %in% c( " Mom2ADSbox5beadv.wav "," Mom2ADSbox5bootv.wav " )),]->dat
 
 
 dat$Mom=tolower(gsub(" ","",dat$Mom)) #clean up
@@ -150,7 +151,7 @@ ggplot(dat, aes(x=f1, y=f2, color=ds)) +
 
 table(dat$target)
 #old_dat[old_dat$Mom %in% outliers,]
-dim(dat) #609 obs
+dim(dat) #612 obs
 
 #table(dat$v)
 # sum(table(dat$v))
@@ -283,9 +284,12 @@ for(thismom in levels(factor(dat$motID))) for(thisds in levels(factor(dat$ds))){
   vs=rbind(vs,
            cbind(
 # (F1/i/*(F2/u/ - F2/ɑ/) + F1/u/*(F2/i/ - F2/ɑ/) + F1/ɑ/*(F2/i/ - F2/u/))/2
-      (mydat$f1[mydat$v=="i" & mydat$motID==thismom]*(mydat$f2[mydat$v=="u" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
-        mydat$f1[mydat$v=="u" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
-        mydat$f1[mydat$v=="a" & mydat$motID==thismom]*(mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="u" & mydat$motID==thismom])
+      (mydat$f1[mydat$v=="i" & mydat$motID==thismom]*
+         (mydat$f2[mydat$v=="u" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
+        mydat$f1[mydat$v=="u" & mydat$motID==thismom]*
+         (mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="a" & mydat$motID==thismom]) +
+        mydat$f1[mydat$v=="a" & mydat$motID==thismom]*
+         (mydat$f2[mydat$v=="i" & mydat$motID==thismom] - mydat$f2[mydat$v=="u" & mydat$motID==thismom])
       )/2,
           thismom,thisds )
         )
@@ -296,9 +300,13 @@ write.csv(vs,"output/vs.csv",row.names=F)
 
 read.csv("output/vs.csv")->vs
 
+
 pivot_wider(vs,names_from="ds",values_from="vss")->vs_wide
 write.csv(vs_wide,"output/vs_wide.csv",row.names=F)
 
+vs %>%
+    group_by(ds) %>%
+    dplyr::summarize(vss = mean(vss, na.rm=TRUE)) 
 ```
 
 ## ANOVA
@@ -334,7 +342,7 @@ model.tables(ez_outcome$aov, "means")
 
 Paired contrasts -- same pattern of results but different t values.
 
-```{r}
+```{r ts}
 library(effsize)
 t.test(vs$vss[vs$ds=="pds"],vs$vss[vs$ds=="ids"],paired=T)
 cohen.d(vs$vss[vs$ds=="pds"|vs$ds=="ids"],vs$ds[vs$ds=="pds"|vs$ds=="ids"])
