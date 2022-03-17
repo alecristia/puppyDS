@@ -1,6 +1,5 @@
 ---
-title: 'Supplementary materials: Hyperarticulation in Infant-Directed Speech as an
-  Unintentional Consequence  of Vocal Emotion'
+title: 'Supplementary materials: Hyperarticulation in Infant-Directed Speech as a Consequence  of Vocal Emotion'
 output:
   pdf_document:
     toc: yes
@@ -112,6 +111,10 @@ means %>%
                      f2 = mean(f2, na.rm=TRUE)) -> overall_means_nogroup
 
 
+means %>%
+    group_by(ds,v) %>%
+    dplyr::summarize(f1 = sd(f1, na.rm=TRUE),
+                     f2 = sd(f2, na.rm=TRUE)) -> overall_sds_nogroup
 
 ```
 
@@ -211,7 +214,7 @@ summary(mymod)
 mymod=lmer(f1~ds*target + (1 + ds|motID),data=dat)
 summary(mymod)
 
-mymod=lmer(f2~ds*target + (1|motID),data=dat)
+mymod=lmer(f2~ds*target + (1 + ds |motID),data=dat)
 summary(mymod)
 ```
 
@@ -253,7 +256,7 @@ p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds))
     y=f2 ,
     group=ds
   ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() +
+  geom_point() + scale_y_reverse() + scale_x_reverse() +
   annotate("text", x= 350,y=2800,label="i") +
   annotate("text", x= 850,y=1350,label="a") +
   annotate("text", x= 350,y=1350,label="u")
@@ -262,3 +265,43 @@ p
 
 ```
 
+```{r fig-all-error}
+p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(overall_means_nogroup) ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() + scale_y_reverse() + scale_x_reverse() +
+  annotate("text", x= 350,y=2800,label="i") +
+  annotate("text", x= 850,y=1350,label="a") +
+  annotate("text", x= 350,y=1350,label="u") +
+      geom_errorbar(aes(ymin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),ymax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
+    geom_errorbarh(aes(xmin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),xmax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(y= "F2 (Hz)", x = "F1 (Hz)")
+ 
+p
+
+```
+
+```{r fig-all2}
+
+overall_means_target$target=factor(overall_means_target$target, levels=c("bead","box","ball","boot"), ordered=T)
+overall_means_target[order(overall_means_target$target),]->overall_means_target
+
+sds$target=factor(sds$target, levels=c("bead","box","ball","boot"), ordered=T)
+sds[order(sds$target),]->sds
+
+p <- ggplot(subset(overall_means_target), aes(x = f1, y = f2, col = factor(ds)))+
+  geom_polygon(data = subset(overall_means_target) ,
+  aes(
+     x=f1 ,
+    y=f2 ,
+    group=ds
+  ), fill=NA) + #alpha = 0.3 (if we want fill)
+  geom_point() 
+p 
+
+
+
+```
