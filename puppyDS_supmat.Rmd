@@ -1,5 +1,5 @@
 ---
-title: 'Supplementary materials: Hyperarticulation in Infant-Directed Speech as a Consequence  of Vocal Emotion'
+title: 'Supplementary materials: Positive Valence Contributes to Hyperarticulation in Maternal Speech to Infants and Puppies'
 output:
   pdf_document:
     toc: yes
@@ -7,7 +7,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(echo = F,warning=F,message = FALSE)
 #library(xlsx)
 library(tidyr)
 library(dplyr)
@@ -27,7 +27,7 @@ library(lmerTest)
 read.csv("input/puppyDS.csv")->dat
 #remove empty rows
 dat=dat[!is.na(dat$Mom) &dat$Mom !="" ,]
-dim(dat) #614 obs
+#dim(dat) #614 obs
 
 
 dat$Mom=tolower(gsub(" ","",dat$Mom)) #clean up
@@ -74,8 +74,8 @@ ggplot(dat, aes(x=f1, y=f2, color=ds)) +
 ```{r outliers and means}
 
 table(dat$target)
-#old_dat[old_dat$Mom %in% outliers,]
-dim(dat) #612 obs
+
+# dim(dat) #614 obs
 
 #table(dat$v)
 # sum(table(dat$v))
@@ -120,6 +120,7 @@ means %>%
 
 
 Next we calculate vowel space for each mom and register.
+
 ```{r calc-space}
 
 #formula from footnote
@@ -231,7 +232,7 @@ dat %>%
 
 ```
 
-We then fit separate regressions to each?
+We then fit separate regressions to each.
 
 ```{r}
 summary(lmer(f1.sd~ds*target + (1 |motID),data=sds))
@@ -248,40 +249,31 @@ summary(lmer(f2.sd~ds*target + (1|motID),data=sds))
 ## Figure of the vowel space
 
 
-```{r fig-all}
-p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds)))+
-  geom_polygon(data = subset(overall_means_nogroup) ,
-  aes(
-     x=f1 ,
-    y=f2 ,
-    group=ds
-  ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() + scale_y_reverse() + scale_x_reverse() +
-  annotate("text", x= 350,y=2800,label="i") +
-  annotate("text", x= 850,y=1350,label="a") +
-  annotate("text", x= 350,y=1350,label="u")
- 
-p
-
-```
 
 ```{r fig-all-error}
-p <- ggplot(subset(overall_means_nogroup), aes(x = f1, y = f2, col = factor(ds)))+
+p <- ggplot(subset(overall_means_nogroup), aes(y = f1, x = f2, col = factor(ds)))+
   geom_polygon(data = subset(overall_means_nogroup) ,
   aes(
-     x=f1 ,
-    y=f2 ,
+     y=f1 ,
+    x=f2 ,
     group=ds
   ), fill=NA) + #alpha = 0.3 (if we want fill)
   geom_point() + scale_y_reverse() + scale_x_reverse() +
-  annotate("text", x= 350,y=2800,label="i") +
-  annotate("text", x= 850,y=1350,label="a") +
-  annotate("text", x= 350,y=1350,label="u") +
-      geom_errorbar(aes(ymin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),ymax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
-    geom_errorbarh(aes(xmin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),xmax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(y= "F2 (Hz)", x = "F1 (Hz)")
+  annotate("text", y= 350,x=2800,label="i") +
+  annotate("text", y= 850,x=1500,label="a") +
+  annotate("text", y= 350,x=1350,label="u") +
+      geom_errorbarh(aes(xmin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),xmax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
+    geom_errorbar(aes(ymin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),ymax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(y= "F2 (Hz)", x = "F1 (Hz)")
  
 p
 
+jpeg("output/fig-vss.jpg",res=300,width=7, height=5, units="cm")
+p
+dev.off()
+
+pdf("output/fig-vss.pdf",width=5, height=5)
+p
+dev.off()
 ```
 
 ```{r fig-all2}
