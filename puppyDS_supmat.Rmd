@@ -251,21 +251,29 @@ summary(lmer(f2.sd~ds*target + (1|motID),data=sds))
 
 
 ```{r fig-all-error}
-p <- ggplot(subset(overall_means_nogroup), aes(y = f1, x = f2, col = factor(ds)))+
-  geom_polygon(data = subset(overall_means_nogroup) ,
+
+# The palette with grey:
+cbPalette <- c( "#56B4E9","#999999","#E69F00")
+
+
+p <- ggplot(subset(overall_means_nogroup), aes(y = f2, x = f1, col = factor(ds))) +
+  geom_polygon(data = subset(overall_means_nogroup) , 
   aes(
-     y=f1 ,
-    x=f2 ,
-    group=ds
+     x=f1 ,
+    y=f2 ,
+    group=ds, 
+   linetype=factor(ds)
   ), fill=NA) + #alpha = 0.3 (if we want fill)
-  geom_point() + scale_y_reverse() + scale_x_reverse() +
-  annotate("text", y= 350,x=2800,label="i") +
-  annotate("text", y= 850,x=1500,label="a") +
-  annotate("text", y= 350,x=1350,label="u") +
-      geom_errorbarh(aes(xmin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),xmax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
-    geom_errorbar(aes(ymin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),ymax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(y= "F2 (Hz)", x = "F1 (Hz)")
+  geom_point() + # scale_y_reverse() + scale_x_reverse() +
+  annotate("text", x= 350,y=2800,label="i") +
+  annotate("text", x= 850,y=1500,label="a") +
+  annotate("text", x= 350,y=1350,label="u") +
+      geom_errorbar(aes(ymin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),
+                         ymax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
+    geom_errorbarh(aes(xmin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),
+                      xmax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(x= "F2 (Hz)", y = "F1 (Hz)") + theme(panel.background = element_blank()) +scale_colour_manual(values=cbPalette)
  
-p
+p 
 
 jpeg("output/fig-vss.jpg",res=300,width=7, height=5, units="cm")
 p
