@@ -275,7 +275,7 @@ p <- ggplot(subset(overall_means_nogroup), aes(y = f2, x = f1, col = factor(ds))
  
 p 
 
-jpeg("output/fig-vss.jpg",res=300,width=7, height=5, units="cm")
+jpeg("output/fig-vss.jpg",res=300,width=8, height=5, units="cm")
 p
 dev.off()
 
