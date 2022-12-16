@@ -271,7 +271,7 @@ p <- ggplot(subset(overall_means_nogroup), aes(y = f2, x = f1, col = factor(ds))
       geom_errorbar(aes(ymin = overall_means_nogroup$f2-overall_sds_nogroup$f2/sqrt(10),
                          ymax = overall_means_nogroup$f2+overall_sds_nogroup$f2/sqrt(10))) + 
     geom_errorbarh(aes(xmin = overall_means_nogroup$f1-overall_sds_nogroup$f1/sqrt(10),
-                      xmax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(x= "F2 (Hz)", y = "F1 (Hz)") + theme(panel.background = element_blank()) +scale_colour_manual(values=cbPalette)
+                      xmax = overall_means_nogroup$f1+overall_sds_nogroup$f1/sqrt(10))) + theme(legend.title = element_blank()) +labs(y= "F2 (Hz)", x = "F1 (Hz)") + theme(panel.background = element_blank()) +scale_colour_manual(values=cbPalette)
  
 p 
 
